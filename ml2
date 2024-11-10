@@ -1,0 +1,51 @@
+import pandas as pd
+
+df = pd.read_csv('sales_data_sample.csv',encoding='latin1')
+df
+
+df.isna().sum()
+df=df.drop(columns=['ADDRESSLINE1','ADDRESSLINE2','STATE','TERRITORY','ORDERNUMBER','POSTALCODE','PHONE','ORDERDATE','STATUS','QTR_ID','CUSTOMERNAME', 'CITY','CONTACTLASTNAME', 'CONTACTFIRSTNAME'],axis=1)
+
+DEALSIZE = pd.get_dummies(df['DEALSIZE'])
+PRODUCTLINE = pd.get_dummies(df['PRODUCTLINE'])
+COUNTRY = pd.get_dummies(df['COUNTRY'])
+df = pd.concat([df,DEALSIZE,PRODUCTLINE,COUNTRY],axis=1)
+df
+
+if 'DEALSIZE' in df and 'PRODUCTLINE' in df and 'COUNTRY' in df :
+    df.drop(columns=['DEALSIZE','PRODUCTLINE','COUNTRY'],axis=1,inplace=True)
+df
+
+df['PRODUCTCODE']=pd.Categorical(df['PRODUCTCODE']).codes
+df
+
+from sklearn.cluster import KMeans
+distortion=[]
+k=range(1,10)
+for n in k:
+    km=KMeans(n_clusters=n)
+    km.fit(df)
+    distortion.append(km.inertia_)
+    
+import matplotlib.pyplot as plt
+
+plt.plot(k,distortion,'bx-')
+plt.xlabel('k')
+plt.ylabel('distortion')
+plt.show()
+
+x_train = df.values
+model = KMeans(n_clusters=4,random_state=42)
+model.fit(x_train)
+
+pred = model.predict(x_train)
+pred1 = pd.DataFrame(pred)
+
+df = pd.concat([df,pred1],axis=1)
+
+df_temp = df.drop(columns=[0],axis=1)
+model.cluster_centers_
+
+cc=pd.DataFrame(data=model.cluster_centers_,columns=[df_temp.columns])
+cc
+

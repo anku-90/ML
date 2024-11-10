@@ -1,0 +1,132 @@
+import pandas as pd
+
+uber = pd.read_csv('uber.csv')
+
+uber.columns
+
+uber.drop(['Unnamed: 0','key'],axis=1,inplace=True)
+
+uber.describe()
+
+uber.isna().sum()
+uber.dropna(inplace=True)
+
+uber['pickup_datetime'] = pd.to_datetime(uber['pickup_datetime'])
+
+uber['pickup_hour'] = uber['pickup_datetime'].dt.hour
+uber['pickup_day'] = uber['pickup_datetime'].dt.dayofweek
+uber['pickup_month'] = uber['pickup_datetime'].dt.month
+
+uber.drop('pickup_datetime',axis=1)
+
+#identify outliers
+def outliers(data_item):
+    outliers=[]
+    data_item=sorted(data_item)
+    Q1 = np.percentile(data_item,25)
+    Q3 = np.percentile(data_item,75)
+    IQR = Q3 - Q1
+
+# Define lower and upper bounds for outliers
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+
+    print(lower_bound,upper_bound)
+    return lower_bound,upper_bound
+
+lower,upper = outliers(uber['fare_amount'])
+
+uber = uber[uber['fare_amount']>lower]
+uber = uber[uber['fare_amount']<upper]
+
+import seaborn as sns
+import matplotlib as plt
+import numpy as np
+
+sns.boxplot(uber['fare_amount'])
+
+columns_of_interest = ['fare_amount', 'pickup_hour', 'pickup_day', 'pickup_month', 'passenger_count'] 
+correlation_with_fare = uber[columns_of_interest].corr()
+
+sns.heatmap(correlation_with_fare, annot=True,cmap='coolwarm', linewidths=0.5)
+plt.title('Correlation Matrix of Uber Fare Dataset')
+plt.show()
+
+uber_new = uber.drop('pickup_datetime',axis=1)
+uber_new
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+import numpy as np
+
+# Features and target variable
+# Select your relevant features here (drop 'fare_amount' from X, it's the target)
+X = uber_new.drop('fare_amount', axis=1)
+y = uber_new['fare_amount']
+
+# Split the data into train and test sets (70% train, 30% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Linear Regression model
+lin_reg = LinearRegression()
+lin_reg.fit(X_train, y_train)
+
+# Predict on the test set
+y_pred_lin = lin_reg.predict(X_test)
+
+r2_lin = r2_score(y_test, y_pred_lin)
+rmse_lin = np.sqrt(mean_squared_error(y_test, y_pred_lin))
+mae_lin = mean_absolute_error(y_test, y_pred_lin)
+
+# Print evaluation metrics
+print(f"Linear Regression - R²: {r2_lin}, RMSE: {rmse_lin}, MAE: {mae_lin}")
+
+
+from sklearn.ensemble import RandomForestRegressor
+X = uber_new.drop('fare_amount', axis=1)
+y = uber_new['fare_amount']
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.1, random_state=42)
+# Step 4: Train the Random Forest Regression model
+rf_reg = RandomForestRegressor(
+    n_estimators=10,          # Reduced number of trees
+    max_depth=10,             # Limiting the depth of the trees
+    random_state=42)        # For reproducibility              
+rf_reg.fit(X_train, y_train)
+
+y_pred_rf = rf_reg.predict(X_test)
+
+# Step 6: Evaluate the model
+r2_rf = r2_score(y_test, y_pred_rf)
+rmse_rf = np.sqrt(mean_squared_error(y_test, y_pred_rf))
+mae_rf = mean_absolute_error(y_test, y_pred_rf)
+
+# Print evaluation metrics
+print(f"Random Forest Regression - R²: {r2_rf}, RMSE: {rmse_rf}, MAE: {mae_rf}")
+
+# Print comparison of both models
+print(f"Linear Regression - R²: {r2_lin}, RMSE: {rmse_lin}, MAE: {mae_lin}")
+print(f"Random Forest Regression - R²: {r2_rf}, RMSE: {rmse_rf}, MAE: {mae_rf}")
+
+HAVERSINE
+
+import math
+def haversine(long1,lat1,long2,lat2):
+	long1=math.radians(long1)
+	lat1=math.radians(lat1)
+	long2=math.radians(long2)
+	lat2=math.radians(lat2)
+	
+	dlat=lat2-lat1
+	dlong = lat2-lat1
+	
+	R=6371
+	
+	a=math.sin(dlat/2)**2+math.cos(lat1)*cos(lat2)*math.sin(dlong/2)**2
+	
+	c = 2*math.atan2(math.sqrt[a],math.sqrt[1-a])
+	
+	distance = c*R
+	return distance
+	
+uber[distance] = haversine(uber[],uber[],)
